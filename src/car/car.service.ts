@@ -31,28 +31,33 @@ export class CarService {
     }
 
     //CreateCar
-    public async postCar(carData: Partial<Car>): Promise<Car> {
-        // Check if the ID is provided
-        if (carData.hasOwnProperty('id') && carData.id !== undefined) {
-            // Check if a car with the same ID already exists
-            const existingCar = await this.carRepository.findOne({ where: { id: carData.id } });
-            if (existingCar) {
-                throw new HttpException('A car with the provided ID already exists', HttpStatus.CONFLICT);
+    public async postCar(carData: Partial<Car>): Promise<{ status: number; car: Car; message: string }> {
+        try {
+            // Check if the ID is provided
+            if (carData.hasOwnProperty('id') && carData.id !== undefined) {
+                // Check if a car with the same ID already exists
+                const existingCar = await this.carRepository.findOne({ where: { id: carData.id } });
+                if (existingCar) {
+                    throw new HttpException('A car with the provided ID already exists', HttpStatus.CONFLICT);
+                }
             }
-        }
 
-        // Check if all required fields are provided
-        const requiredFields = ['make', 'model', 'year', "color", "mileage", "price", "transmission", "engine", "horsepower", "features", "owners", "image"];
-        for (const field of requiredFields) {
-            if (!(field in carData) || !carData[field]) {
-                throw new HttpException(`Missing required field: ${field}`, HttpStatus.BAD_REQUEST);
+            // Check if all required fields are provided
+            const requiredFields = ['make', 'model', 'year', 'color', 'mileage', 'price', 'transmission', 'engine', 'horsepower', 'features', 'owners', 'image'];
+            for (const field of requiredFields) {
+                if (!(field in carData) || !carData[field]) {
+                    throw new HttpException(`Missing required field: ${field}`, HttpStatus.BAD_REQUEST);
+                }
             }
-        }
 
-        // Create and save the new car
-        const newCar = this.carRepository.create(carData);
-        const savedCar = await this.carRepository.save(newCar);
-        return savedCar;
+            // Create and save the new car
+            const newCar = this.carRepository.create(carData);
+            const savedCar = await this.carRepository.save(newCar);
+
+            return { status: HttpStatus.CREATED,message: 'Car added successfully' , car: savedCar, };
+        } catch (error) {
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 
